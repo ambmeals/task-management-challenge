@@ -3,6 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 const taskSchema = z.object({
     title: z.string().min(1, 'Title is required'),
@@ -21,7 +28,12 @@ type TaskFormProps = {
 };
 
 export function TaskForm({ defaultValues, onSubmit, submitButtonLabel }: TaskFormProps) {
-    const { register, handleSubmit, formState: { errors } } = useForm<TaskFormData>({
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        formState: { errors },
+    } = useForm<TaskFormData>({
         resolver: zodResolver(taskSchema),
         defaultValues,
     });
@@ -29,15 +41,57 @@ export function TaskForm({ defaultValues, onSubmit, submitButtonLabel }: TaskFor
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-                <label>Title</label>
-                <Input {...register('title')} />
-                {errors.title && <p>{errors.title.message}</p>}
+                <label htmlFor="title" className="block text-sm font-medium">Title</label>
+                <Input id="title" {...register('title')} />
+                {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
             </div>
             <div>
-                <label>Description</label>
-                <Input {...register('description')} />
+                <label htmlFor="description" className="block text-sm font-medium">Description</label>
+                <Input id="description" {...register('description')} />
             </div>
-            <Button type="submit">{submitButtonLabel}</Button>
+            <div>
+                <label htmlFor="priority" className="block text-sm font-medium">Priority</label>
+                <Select
+                    onValueChange={(value) =>
+                        setValue('priority', value as TaskFormData['priority'], { shouldValidate: true })
+                    }
+                    defaultValue={defaultValues?.priority || 'MEDIUM'}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {['LOW', 'MEDIUM', 'HIGH'].map((priority) => (
+                            <SelectItem key={priority} value={priority}>
+                                {priority}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <label htmlFor="status" className="block text-sm font-medium">Status</label>
+                <Select
+                    onValueChange={(value) =>
+                        setValue('status', value as TaskFormData['status'], { shouldValidate: true })
+                    }
+                    defaultValue={defaultValues?.status || 'TODO'}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {['TODO', 'IN_PROGRESS', 'DONE'].map((status) => (
+                            <SelectItem key={status} value={status}>
+                                {status}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <label htmlFor="dueDate" className="block text-sm font-medium">Due Date</label>
+                <Input type="date" id="dueDate" {...register('dueDate')} />
+            </div>
+            <Button type="submit" className="w-full">{submitButtonLabel}</Button>
         </form>
     );
 }

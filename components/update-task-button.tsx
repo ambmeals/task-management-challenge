@@ -1,10 +1,13 @@
 'use client';
-
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -18,21 +21,38 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Pencil } from 'lucide-react';
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'] as const;
 const STATUSES = ['TODO', 'IN_PROGRESS', 'DONE'] as const;
 
-export function EditTaskButton({ task }: { task: any }) {
+const taskSchema = z.object({
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().optional(),
+    priority: z.enum(PRIORITIES),
+    status: z.enum(STATUSES),
+    dueDate: z.string().optional(),
+});
+
+type TaskFormData = z.infer<typeof taskSchema>;
+
+export function EditTaskButton({ task }: { task: TaskFormData & { id: string } }) {
     const [open, setOpen] = useState(false);
-    const [updatedTask, setUpdatedTask] = useState(task);
+    const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<TaskFormData>({
+        resolver: zodResolver(taskSchema),
+        defaultValues: {
+            ...task,
+            dueDate: task.dueDate || '',
+        },
+    });
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setUpdatedTask((prev: any) => ({ ...prev, [name]: value }));
-    };
-
-    const handleUpdate = async () => {
+    const onSubmit = async (data: TaskFormData) => {
         try {
+            const updatedTask = {
+                ...data,
+                dueDate: data.dueDate || null,
+            };
+
             const response = await fetch(`https://localhost:7025/api/task/${task.id}`, {
                 method: 'PUT',
                 headers: {
@@ -41,53 +61,52 @@ export function EditTaskButton({ task }: { task: any }) {
                 body: JSON.stringify(updatedTask),
             });
 
-            if (response.ok) {
-                setOpen(false);
-                window.location.reload();
-            } else {
-                const errorData = await response.json();
-                alert(errorData.message || 'Failed to update the task.');
-            }
+            if (!response.ok)
+                throw new Error('Failed to update task');
+
+            reset();
+            setOpen(false);
+            window.location.reload();
         } catch (error) {
-            alert('An error occurred while updating the task.');
+            console.error('Error updating task:', error);
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>Edit Task</Button>
+                <Button>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Task
+                </Button>
             </DialogTrigger>
-
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Edit Task</DialogTitle>
+                    <DialogDescription>
+                        Update the details for this task below.
+                    </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
                         <Label htmlFor="title">Title</Label>
-                        <Input
-                            id="title"
-                            name="title"
-                            value={updatedTask.title}
-                            onChange={handleInputChange}
-                        />
+                        <Input id="title" {...register('title')} />
+                        {errors.title && (
+                            <p className="text-red-500 text-sm">{errors.title.message}</p>
+                        )}
                     </div>
                     <div>
                         <Label htmlFor="description">Description</Label>
-                        <Input
-                            id="description"
-                            name="description"
-                            value={updatedTask.description || ''}
-                            onChange={handleInputChange}
-                        />
+                        <Input id="description" {...register('description')} />
                     </div>
                     <div>
                         <Label htmlFor="priority">Priority</Label>
                         <Select
                             onValueChange={(value) =>
-                                setUpdatedTask((prev: any) => ({ ...prev, priority: value }))}
-                            defaultValue={updatedTask.priority}>
+                                setValue('priority', value as TaskFormData['priority'], { shouldValidate: true })
+                            }
+                            defaultValue={task.priority}
+                        >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select priority" />
                             </SelectTrigger>
@@ -104,8 +123,10 @@ export function EditTaskButton({ task }: { task: any }) {
                         <Label htmlFor="status">Status</Label>
                         <Select
                             onValueChange={(value) =>
-                                setUpdatedTask((prev: any) => ({ ...prev, status: value }))}
-                            defaultValue={updatedTask.status}>
+                                setValue('status', value as TaskFormData['status'], { shouldValidate: true })
+                            }
+                            defaultValue={task.status}
+                        >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
                             </SelectTrigger>
@@ -120,17 +141,12 @@ export function EditTaskButton({ task }: { task: any }) {
                     </div>
                     <div>
                         <Label htmlFor="dueDate">Due Date</Label>
-                        <Input
-                            type="date"
-                            id="dueDate"
-                            name="dueDate"
-                            value={updatedTask.dueDate || ''}
-                            onChange={handleInputChange} />
+                        <Input type="date" id="dueDate" {...register('dueDate')} />
                     </div>
-                    <Button onClick={handleUpdate} className="w-full">
-                        Update Task
+                    <Button type="submit" className="w-full">
+                        Save Changes
                     </Button>
-                </div>
+                </form>
             </DialogContent>
         </Dialog>
     );

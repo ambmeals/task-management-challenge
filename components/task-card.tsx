@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { EditTaskButton } from '@/components/update-task-button';
 import { Task } from '@/lib/db';
 
 const priorityColors = {
@@ -23,15 +24,28 @@ const statusColors = {
 
 interface TaskCardProps {
   task: Task;
+  onDelete: (id: string) => void;
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+function getColorClass<T extends object>(
+  value: string | undefined,
+  colorMap: T,
+  defaultClass = 'bg-gray-200 text-gray-800'
+) {
+  return value && value in colorMap
+    ? colorMap[value as keyof T]
+    : defaultClass;
+}
+
+export function TaskCard({ task, onDelete }: TaskCardProps) {
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl">{task.title}</CardTitle>
-          <Badge variant="outline" className={priorityColors[task.priority as keyof typeof priorityColors]}>
+          <Badge
+            variant="outline"
+            className={getColorClass(task.priority, priorityColors)}>
             {task.priority}
           </Badge>
         </div>
@@ -44,8 +58,18 @@ export function TaskCard({ task }: TaskCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-gray-600 mb-4">{task.description}</p>
-        <Badge className={statusColors[task.status as keyof typeof statusColors]}>{task.status}</Badge>
+        <p className="text-gray-600 mb-4">{task.description || 'No description provided'}</p>
+        <Badge className={getColorClass(task.status, statusColors)}>
+          {task.status}
+        </Badge>
+        <div className="flex gap-2 mt-4">
+          <EditTaskButton task={task} />
+          <button
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            onClick={() => onDelete(task.id)}>
+            Delete
+          </button>
+        </div>
       </CardContent>
     </Card>
   );

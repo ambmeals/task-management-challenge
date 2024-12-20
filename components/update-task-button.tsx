@@ -105,8 +105,7 @@ export function EditTaskButton({ task }: { task: TaskFormData & { id: string } }
                             onValueChange={(value) =>
                                 setValue('priority', value as TaskFormData['priority'], { shouldValidate: true })
                             }
-                            defaultValue={task.priority}
-                        >
+                            defaultValue={task.priority}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select priority" />
                             </SelectTrigger>
@@ -125,8 +124,7 @@ export function EditTaskButton({ task }: { task: TaskFormData & { id: string } }
                             onValueChange={(value) =>
                                 setValue('status', value as TaskFormData['status'], { shouldValidate: true })
                             }
-                            defaultValue={task.status}
-                        >
+                            defaultValue={task.status}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
                             </SelectTrigger>

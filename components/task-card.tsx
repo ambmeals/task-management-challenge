@@ -63,7 +63,18 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
           {task.status}
         </Badge>
         <div className="flex gap-2 mt-4">
-          <EditTaskButton task={task} />
+                  <EditTaskButton
+                      task={{
+                          id: task.id,
+                          title: task.title,
+                          description: task.description || undefined,
+                          priority: task.priority as 'LOW' | 'MEDIUM' | 'HIGH',
+                          status: task.status as 'TODO' | 'IN_PROGRESS' | 'DONE',
+                          dueDate: task.dueDate
+                              ? task.dueDate.toISOString()
+                              : undefined,
+                      }}
+                  />
           <button
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
             onClick={() => onDelete(task.id)}>
